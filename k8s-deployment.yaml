@@ -13,7 +13,7 @@ spec:
         app: simple-website
     spec:
       containers:
-      - name: simple-website
+      - name: simple-website-container
         image: gcr.io/stone-chariot-439615-n0/my-image
 
         ports:
