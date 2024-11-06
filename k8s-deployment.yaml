@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: simple-website-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: simple-website
+  template:
+    metadata:
+      labels:
+        app: simple-website
+    spec:
+      containers:
+      - name: simple-website
+        image: gcr.io/stone-chariot-439615-n0//simple-website:1.0
+        ports:
+        - containerPort: 3000
