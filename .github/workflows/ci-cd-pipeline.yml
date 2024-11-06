@@ -35,7 +35,7 @@ jobs:
         source $HOME/google-cloud-sdk/path.bash.inc
         gcloud components install gke-gcloud-auth-plugin
 
-    # Step 5: Configure Docker to use gcloud as a credential helper
+    # Step 5: Configure Docker for Google Cloud
     - name: Configure Docker for Google Cloud
       run: |
         gcloud auth configure-docker --quiet
