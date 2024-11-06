@@ -4,7 +4,7 @@ name: Build, Push, and Deploy to GKE
 on:
   push:
     branches:
-      - main  # or specify the branch to trigger the workflow
+      - main  # Trigger workflow on push to the main branch
 
 jobs:
   build-and-deploy:
@@ -19,36 +19,43 @@ jobs:
     - name: Authenticate to Google Cloud
       uses: google-github-actions/auth@v0
       with:
-        credentials_json: ${{ secrets.GCP_SA_KEY }}  # Service account JSON key stored as GitHub Secret
+        credentials_json: ${{ secrets.GCP_SA_KEY }}  # Your GCP service account JSON key
 
-    # Step 3: Set up Google Cloud SDK for gcloud and kubectl
+    # Step 3: Set up Google Cloud SDK
     - name: Set up Google Cloud SDK
       uses: google-github-actions/setup-gcloud@v1
       with:
         project_id: ${{ secrets.GCP_PROJECT_ID }}
         export_default_credentials: true
 
-    # Step 4: Configure Docker to use gcloud as a credential helper
+    # Step 4: Install gke-gcloud-auth-plugin for Kubernetes authentication
+    - name: Install gke-gcloud-auth-plugin
+      run: |
+        curl -sSL https://sdk.cloud.google.com | bash
+        source $HOME/google-cloud-sdk/path.bash.inc
+        gcloud components install gke-gcloud-auth-plugin
+
+    # Step 5: Configure Docker for Google Cloud
     - name: Configure Docker for Google Cloud
       run: |
         gcloud auth configure-docker --quiet
 
-    # Step 5: Build Docker image
+    # Step 6: Build Docker image
     - name: Build Docker image
       run: |
         docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/simple-website:${{ github.sha }} .
 
-    # Step 6: Push Docker image to GCR
+    # Step 7: Push Docker image to GCR
     - name: Push Docker image to GCR
       run: |
         docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/simple-website:${{ github.sha }}
 
-    # Step 7: Set up kubectl with GKE cluster context
+    # Step 8: Get credentials for GKE cluster
     - name: Get GKE credentials
       run: |
-        gcloud container clusters get-credentials simple-website-cluster --zone europe-west2-b --project stone-chariot-439615-n0
+        gcloud container clusters get-credentials simple-website-cluster --zone europe-west2-b --project ${{ secrets.GCP_PROJECT_ID }}
 
-    # Step 8: Deploy to GKE
+    # Step 9: Deploy to GKE using kubectl
     - name: Deploy to GKE
       run: |
         kubectl set image deployment/simple-website-deployment simple-website-container=gcr.io/${{ secrets.GCP_PROJECT_ID }}/simple-website:${{ github.sha }}
