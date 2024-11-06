@@ -10,41 +10,34 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout the code
       - name: Checkout code
         uses: actions/checkout@v2
 
-      # 2. Authenticate to Google Cloud
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v0
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-      # 3. Configure Docker to use Google Cloud
       - name: Configure Docker for Google Cloud
         run: |
           gcloud auth configure-docker --quiet
 
-      # 4. Build the Docker image
       - name: Build Docker image
         run: |
           docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/my-image:${{ github.sha }} .
 
-      # 5. Push the Docker image to GCR
       - name: Push Docker image to GCR
         run: |
           docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/my-image:${{ github.sha }}
 
-      # 6. Install kubectl and gke-gcloud-auth-plugin
       - name: Install kubectl and GKE Auth Plugin
         run: |
-          # Add Google Cloud public key
-          sudo apt-get update -y
-          sudo apt-get install -y apt-transport-https ca-certificates gnupg
-          curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+          # Download and add the Google Cloud public key to the keyring
+          sudo install -o root -g root -m 644 /usr/share/keyrings/cloud.google.gpg /etc/apt/trusted.gpg.d/
+          curl -sSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo tee /usr/share/keyrings/cloud.google.gpg > /dev/null
 
-          # Add Google Cloud SDK repository
-          echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+          # Add Google Cloud SDK repository using the new keyring
+          echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.cloud.google.com/apt cloud-sdk main" | sudo tee /etc/apt/sources.list.d/google-cloud-sdk.list
 
           # Update package list and install kubectl and Google Cloud SDK
           sudo apt-get update -y
@@ -53,12 +46,10 @@ jobs:
           # Install gke-gcloud-auth-plugin using gcloud
           gcloud components install gke-gcloud-auth-plugin -q
 
-      # 7. Deploy to GKE
       - name: Deploy to GKE
         env:
           PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
         run: |
-          # Authenticate kubectl with GKE
           gcloud container clusters get-credentials simple-website-cluster \
             --zone europe-west2-b \
             --project $PROJECT_ID
