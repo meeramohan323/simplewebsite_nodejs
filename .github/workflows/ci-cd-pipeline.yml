@@ -1,10 +1,9 @@
-# .github/workflows/deploy-to-gke.yml
 name: Build, Push, and Deploy to GKE
 
 on:
   push:
     branches:
-      - main  # Trigger deployment on push to the main branch
+      - main
 
 jobs:
   build-deploy:
@@ -19,12 +18,12 @@ jobs:
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v0
         with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}  # GCP service account JSON key stored in GitHub Secrets
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
 
       # 3. Configure Docker to use Google Cloud
       - name: Configure Docker for Google Cloud
         run: |
-          gcloud auth configure-docker --quiet  # Configures Docker for GCR
+          gcloud auth configure-docker --quiet
 
       # 4. Build the Docker image
       - name: Build Docker image
@@ -36,9 +35,14 @@ jobs:
         run: |
           docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/my-image:${{ github.sha }}
 
-      # 6. Set up kubectl
-      - name: Install kubectl
-        uses: azure/setup-kubectl@v3  # Sets up kubectl CLI
+      # 6. Install kubectl and gke-gcloud-auth-plugin
+      - name: Install kubectl and GKE Auth Plugin
+        run: |
+          # Install kubectl
+          sudo apt-get update && sudo apt-get install -y kubectl
+          
+          # Install gke-gcloud-auth-plugin
+          sudo apt-get install -y google-cloud-sdk-gke-gcloud-auth-plugin
 
       # 7. Deploy to GKE
       - name: Deploy to GKE
@@ -51,9 +55,8 @@ jobs:
             --project $PROJECT_ID
           
           # Apply Kubernetes configurations for deployment and service
-              kubectl apply -f k8s-deployment.yaml
-              kubectl apply -f k8s-service.yaml
-
+          kubectl apply -f k8s-deployment.yaml
+          kubectl apply -f k8s-service.yaml
           
           # Restart deployment to apply changes
           kubectl rollout restart deployment/simple-website-deployment
