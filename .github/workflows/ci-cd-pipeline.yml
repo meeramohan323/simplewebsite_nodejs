@@ -28,7 +28,7 @@ jobs:
         project_id: ${{ secrets.GCP_PROJECT_ID }}
         export_default_credentials: true
 
-    # Step 4: Install gke-gcloud-auth-plugin for Kubernetes authentication
+    # Step 4: Install gke-gcloud-auth-plugin for Kubernetes
     - name: Install gke-gcloud-auth-plugin
       run: |
         curl -sSL https://sdk.cloud.google.com | bash
