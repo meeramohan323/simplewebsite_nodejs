@@ -28,34 +28,29 @@ jobs:
         project_id: ${{ secrets.GCP_PROJECT_ID }}
         export_default_credentials: true
 
-    # Step 4: Install gke-gcloud-auth-plugin for GKE authentication
-    - name: Install gke-gcloud-auth-plugin
-      run: |
-        curl -sSL https://sdk.cloud.google.com | bash
-        source $HOME/google-cloud-sdk/path.bash.inc
-        gcloud components install gke-gcloud-auth-plugin
-
-    # Step 5: Configure Docker for Google Cloud
+    # Step 4: Configure Docker to use gcloud as a credential helper
     - name: Configure Docker for Google Cloud
       run: |
         gcloud auth configure-docker --quiet
 
-    # Step 6: Build Docker image
+    # Step 5: Build Docker image
     - name: Build Docker image
       run: |
-        docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/my-image:${{ github.sha }} .
+        docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/simple-website:${{ github.sha }} .
 
-    # Step 7: Push Docker image to GCR
+    # Step 6: Push Docker image to GCR
     - name: Push Docker image to GCR
       run: |
-        docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/my-image:${{ github.sha }}
+        docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/simple-website:${{ github.sha }}
 
-    # Step 8: Set up kubectl with GKE cluster context
+    # Step 7: Set up kubectl with GKE cluster context
     - name: Get GKE credentials
       run: |
-        gcloud container clusters get-credentials simple-website-cluster --zone europe-west2-b --project ${{ secrets.GCP_PROJECT_ID }}
+        gcloud container clusters get-credentials simple-website-cluster --zone europe-west2-b --project stone-chariot-439615-n0
 
-    # Step 9: Deploy to GKE
+    # Step 8: Deploy to GKE
     - name: Deploy to GKE
       run: |
-        kubectl set image deployment/simple-website-deployment simple-website-container=gcr.io/${{ secrets.GCP_PROJECT_ID }}/my-image:${{ github.sha }}
+        kubectl set image deployment/simple-website-deployment simple-website-container=gcr.io/${{ secrets.GCP_PROJECT_ID }}/simple-website:${{ github.sha }}
+        kubectl apply -f k8s-deployment.yaml
+        kubectl apply -f k8s-service.yaml
