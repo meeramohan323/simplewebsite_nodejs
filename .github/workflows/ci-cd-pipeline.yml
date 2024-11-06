@@ -1,31 +1,56 @@
-name: Build and Push Docker Image to GCR
+
+name: Build and Deploy to GKE
 
 on:
   push:
     branches:
-      - main  # or specify the branch you want to trigger the workflow
+      - main  # Trigger the deployment on push to the main branch
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-    - name: Authenticate to Google Cloud
-      uses: google-github-actions/auth@v0
-      with:
-        credentials_json: ${{ secrets.GCP_SA_KEY}}  # Your GCP service account JSON key stored as GitHub Secret
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v0
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}  # Your GCP service account JSON key stored in GitHub Secrets
 
-    - name: Configure Docker for Google Cloud
-      run: |
-        gcloud auth configure-docker --quiet  # This sets up Docker to use your Google Cloud credentials
+      - name: Configure Docker for Google Cloud
+        run: |
+          gcloud auth configure-docker --quiet  # Configures Docker to authenticate with Google Cloud Container Registry (GCR)
 
-    - name: Build Docker image
-      run: |
-        docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/my-image:${{ github.sha }} .
+      - name: Build Docker image
+        run: |
+          docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/simple-website:${{ github.sha }} .
 
-    - name: Push Docker image to GCR
-      run: |
-        docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/my-image:${{ github.sha }}
+      - name: Push Docker image to GCR
+        run: |
+          docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/simple-website:${{ github.sha }}
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build  # Ensure deployment runs only after the build job has completed
+
+    steps:
+      - name: Set up Google Cloud credentials
+        uses: google-github-actions/auth@v0
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}  # Your GCP service account JSON key stored in GitHub Secrets
+
+      - name: Set up kubectl
+        run: |
+          gcloud container clusters get-credentials simple-website-cluster --zone europe-west2-b --project ${{ secrets.GCP_PROJECT_ID }}  # Replace with your actual cluster name, zone, and project ID
+
+      - name: Deploy to GKE
+        run: |
+          kubectl apply -f k8s-deployment.yml  # Deploy the app
+          kubectl apply -f k8s-service.yml  # Deploy the service
+
+      - name: Verify deployment
+        run: |
+          kubectl get pods  # Verify that pods are up and running
+          kubectl get service simple-website-service  # Verify the external IP for the service
