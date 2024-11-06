@@ -30,7 +30,7 @@ jobs:
         run: |
           docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/my-image:${{ github.sha }} .
 
-      # 5. Push the Docker image to Google Container Registry (GCR)
+      # 5. Push the Docker image to GCR
       - name: Push Docker image to GCR
         run: |
           docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/my-image:${{ github.sha }}
@@ -38,8 +38,15 @@ jobs:
       # 6. Install kubectl and gke-gcloud-auth-plugin
       - name: Install kubectl and GKE Auth Plugin
         run: |
-          # Update Google Cloud SDK
+          # Add Google Cloud public key
+          sudo apt-get update -y
+          sudo apt-get install -y apt-transport-https ca-certificates gnupg
+          curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+
+          # Add Google Cloud SDK repository
           echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+
+          # Update package list and install kubectl and Google Cloud SDK
           sudo apt-get update -y
           sudo apt-get install -y kubectl google-cloud-sdk
 
