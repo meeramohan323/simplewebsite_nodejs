@@ -55,9 +55,9 @@ jobs:
       run: |
         gcloud container clusters get-credentials simple-website-cluster --zone europe-west2-b --project ${{ secrets.GCP_PROJECT_ID }}
 
-    # Step 9: Deploy to GKE using kubectl
+    # Step 9: Deploy to GKE
     - name: Deploy to GKE
       run: |
-        kubectl set image deployment/simple-website-deployment simple-website-container=gcr.io/${{ secrets.GCP_PROJECT_ID }}/simple-website:${{ github.sha }}
+        kubectl set image deployment/simple-website-deployment simple-website=gcr.io/${{ secrets.GCP_PROJECT_ID }}/simple-website:${{ github.sha }}
         kubectl apply -f k8s-deployment.yaml
         kubectl apply -f k8s-service.yaml
