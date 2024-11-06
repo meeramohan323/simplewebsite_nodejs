@@ -1,65 +1,47 @@
-name: Build, Push, and Deploy to GKE
+name: CI/CD Pipeline for Node.js App on GKE
 
 on:
   push:
     branches:
-      - main
+      - main  # Trigger the pipeline on a push to the main branch
 
 jobs:
-  build-deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+    - name: Checkout code
+      uses: actions/checkout@v2
 
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v0
-        with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'  # Or your desired Node.js version
 
-      - name: Configure Docker for Google Cloud
-        run: |
-          gcloud auth configure-docker --quiet
+    - name: Install dependencies
+      run: npm install
 
-      - name: Build Docker image
-        run: |
-          docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/my-image:${{ github.sha }} .
+    - name: Build Docker image
+      run: docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/simple-website:${{ github.sha }} .
 
-      - name: Push Docker image to GCR
-        run: |
-          docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/my-image:${{ github.sha }}
+    - name: Authenticate with Google Cloud
+      uses: google-github-actions/auth@v1
+      with:
+        credentials_json: ${{ secrets.GCP_SA_KEY}}
 
-      - name: Install kubectl and GKE Auth Plugin
-        run: |
-          # Install necessary dependencies
-          sudo apt-get update -y
-          sudo apt-get install -y apt-transport-https ca-certificates curl gnupg
+    - name: Set up Google Cloud SDK
+      uses: google-github-actions/setup-gcloud@v1
+      with:
+        project_id: ${{ secrets.GCP_PROJECT_ID }}
 
-          # Download and add the Google Cloud public key to the keyring
-          curl -sSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo tee /usr/share/keyrings/cloud.google.gpg > /dev/null
+    - name: Push Docker image to GCR
+      run: |
+        docker tag gcr.io/${{ secrets.GCP_PROJECT_ID }}/simple-website:${{ github.sha }} gcr.io/${{ secrets.GCP_PROJECT_ID }}/simple-website:latest
+        docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/simple-website:${{ github.sha }}
+        docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/simple-website:latest
 
-          # Add Google Cloud SDK repository using the new keyring
-          echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.cloud.google.com/apt cloud-sdk main" | sudo tee /etc/apt/sources.list.d/google-cloud-sdk.list
-
-          # Update package list and install kubectl and Google Cloud SDK
-          sudo apt-get update -y
-          sudo apt-get install -y kubectl google-cloud-sdk
-
-          # Install gke-gcloud-auth-plugin using gcloud
-          gcloud components install gke-gcloud-auth-plugin -q
-
-      - name: Deploy to GKE
-        env:
-          PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-        run: |
-          gcloud container clusters get-credentials simple-website-cluster \
-            --zone europe-west2-b \
-            --project $PROJECT_ID
-          
-          # Apply Kubernetes configurations for deployment and service
-          kubectl apply -f k8s-deployment.yaml
-          kubectl apply -f k8s-service.yaml
-          
-          # Restart deployment to apply changes
-          kubectl rollout restart deployment/simple-website-deployment
+    - name: Deploy to GKE
+      env:
+        KUBECONFIG: ${{ secrets.KUBECONFIG }}
+      run: |
+        kubectl set image deployment/simple-website-deployment simple-website=gcr.io/${{ secrets.GCP_PROJECT_ID }}/simple-website:${{ github.sha }}
