@@ -51,8 +51,9 @@ jobs:
             --project $PROJECT_ID
           
           # Apply Kubernetes configurations for deployment and service
-          kubectl apply -f kubernetes/deployment.yaml
-          kubectl apply -f kubernetes/service.yaml
+              kubectl apply -f k8s-deployment.yaml
+              kubectl apply -f k8s-service.yaml
+
           
           # Restart deployment to apply changes
           kubectl rollout restart deployment/simple-website-deployment
