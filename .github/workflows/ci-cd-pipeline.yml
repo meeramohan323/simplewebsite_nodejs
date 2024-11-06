@@ -1,56 +1,58 @@
-name: Build and Push Docker Image to GCR
+# .github/workflows/deploy-to-gke.yml
+name: Build, Push, and Deploy to GKE
 
 on:
   push:
     branches:
-      - main  # or specify the branch you want to trigger the workflow
+      - main  # Trigger deployment on push to the main branch
 
 jobs:
-  build:
+  build-deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+      # 1. Checkout the code
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-    - name: Authenticate to Google Cloud
-      uses: google-github-actions/auth@v0
-      with:
-        credentials_json: ${{ secrets.GCP_SA_KEY }}  # Your GCP service account JSON key stored as GitHub Secret
+      # 2. Authenticate to Google Cloud
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v0
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}  # GCP service account JSON key stored in GitHub Secrets
 
-    - name: Configure Docker for Google Cloud
-      run: |
-        gcloud auth configure-docker --quiet  # This sets up Docker to use your Google Cloud credentials
+      # 3. Configure Docker to use Google Cloud
+      - name: Configure Docker for Google Cloud
+        run: |
+          gcloud auth configure-docker --quiet  # Configures Docker for GCR
 
-    - name: Build Docker image
-      run: |
-        docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/my-image:${{ github.sha }} .
+      # 4. Build the Docker image
+      - name: Build Docker image
+        run: |
+          docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/my-image:${{ github.sha }} .
 
-    - name: Push Docker image to GCR
-      run: |
-        docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/my-image:${{ github.sha }}
+      # 5. Push the Docker image to Google Container Registry (GCR)
+      - name: Push Docker image to GCR
+        run: |
+          docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/my-image:${{ github.sha }}
 
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build  # Make sure build job runs before deploy
+      # 6. Set up kubectl
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3  # Sets up kubectl CLI
 
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
-
-    - name: Log in to Google Cloud
-      uses: google-github-actions/auth@v0
-      with:
-        credentials_json: ${{ secrets.GCP_CREDENTIALS }}
-
-    - name: Set up kubectl
-      uses: google-github-actions/setup-gcloud@v0
-      with:
-        project_id: ${{ secrets.GCP_PROJECT_ID }}
-
-    - name: Deploy to GKE
-      run: |
-        gcloud container clusters get-credentials simple-website-cluster --zone europe-west2-b --project ${{ secrets.GCP_PROJECT_ID }}
-        kubectl apply -f kubernetes/deployment.yaml
-        kubectl apply -f kubernetes/service.yaml
-        kubectl rollout restart deployment/simple-website-deployment
+      # 7. Deploy to GKE
+      - name: Deploy to GKE
+        env:
+          PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+        run: |
+          # Authenticate kubectl with GKE
+          gcloud container clusters get-credentials simple-website-cluster \
+            --zone europe-west2-b \
+            --project $PROJECT_ID
+          
+          # Apply Kubernetes configurations for deployment and service
+          kubectl apply -f kubernetes/deployment.yaml
+          kubectl apply -f kubernetes/service.yaml
+          
+          # Restart deployment to apply changes
+          kubectl rollout restart deployment/simple-website-deployment
