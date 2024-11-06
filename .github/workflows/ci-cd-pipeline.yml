@@ -47,8 +47,8 @@ jobs:
 
       - name: Deploy to GKE
         run: |
-          kubectl apply -f k8s-deployment.yml  # Deploy the app
-          kubectl apply -f k8s-service.yml  # Deploy the service
+          kubectl apply -f k8s-deployment.yaml  # Deploy the app
+          kubectl apply -f k8s-service.yaml  # Deploy the service
 
       - name: Verify deployment
         run: |
