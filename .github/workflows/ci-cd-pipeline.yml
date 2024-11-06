@@ -32,8 +32,11 @@ jobs:
 
       - name: Install kubectl and GKE Auth Plugin
         run: |
+          # Install necessary dependencies
+          sudo apt-get update -y
+          sudo apt-get install -y apt-transport-https ca-certificates curl gnupg
+
           # Download and add the Google Cloud public key to the keyring
-          sudo install -o root -g root -m 644 /usr/share/keyrings/cloud.google.gpg /etc/apt/trusted.gpg.d/
           curl -sSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo tee /usr/share/keyrings/cloud.google.gpg > /dev/null
 
           # Add Google Cloud SDK repository using the new keyring
