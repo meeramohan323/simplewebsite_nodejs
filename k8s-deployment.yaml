@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: simple-website
-        image: gcr.io/stone-chariot-439615-n0/simple-website:1.0
+        image: gcr.io/stone-chariot-439615-n0/my-image
 
         ports:
         - containerPort: 3000
