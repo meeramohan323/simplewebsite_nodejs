@@ -28,27 +28,34 @@ jobs:
         project_id: ${{ secrets.GCP_PROJECT_ID }}
         export_default_credentials: true
 
-    # Step 4: Configure Docker to use gcloud as a credential helper
+    # Step 4: Install gke-gcloud-auth-plugin for GKE authentication
+    - name: Install gke-gcloud-auth-plugin
+      run: |
+        curl -sSL https://sdk.cloud.google.com | bash
+        source $HOME/google-cloud-sdk/path.bash.inc
+        gcloud components install gke-gcloud-auth-plugin
+
+    # Step 5: Configure Docker to use gcloud as a credential helper
     - name: Configure Docker for Google Cloud
       run: |
         gcloud auth configure-docker --quiet
 
-    # Step 5: Build Docker image
+    # Step 6: Build Docker image
     - name: Build Docker image
       run: |
         docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/my-image:${{ github.sha }} .
 
-    # Step 6: Push Docker image to GCR
+    # Step 7: Push Docker image to GCR
     - name: Push Docker image to GCR
       run: |
         docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/my-image:${{ github.sha }}
 
-    # Step 7: Set up kubectl with GKE cluster context
+    # Step 8: Set up kubectl with GKE cluster context
     - name: Get GKE credentials
       run: |
         gcloud container clusters get-credentials simple-website-cluster --zone europe-west2-b --project ${{ secrets.GCP_PROJECT_ID }}
 
-    # Step 8: Deploy to GKE
+    # Step 9: Deploy to GKE
     - name: Deploy to GKE
       run: |
         kubectl set image deployment/simple-website-deployment simple-website-container=gcr.io/${{ secrets.GCP_PROJECT_ID }}/my-image:${{ github.sha }}
