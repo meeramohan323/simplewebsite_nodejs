@@ -27,39 +27,45 @@ jobs:
         project_id: ${{ secrets.GCP_PROJECT_ID }}
         export_default_credentials: true
 
-    # Step 4: Install gke-gcloud-auth-plugin
-    - name: Install gke-gcloud-auth-plugin
+    # Step 4: Install and verify gke-gcloud-auth-plugin
+    - name: Install and verify gke-gcloud-auth-plugin
       run: |
+        # Install Google Cloud SDK
         curl -sSL https://sdk.cloud.google.com | bash
         source $HOME/google-cloud-sdk/path.bash.inc
+        
+        # Install gke-gcloud-auth-plugin
         gcloud components install gke-gcloud-auth-plugin --quiet
 
-    # Step 5: Verify gke-gcloud-auth-plugin
-    - name: Verify gke-gcloud-auth-plugin
-      run: |
-        gke-gcloud-auth-plugin --version
+        # Ensure the plugin is available
+        echo "Verifying gke-gcloud-auth-plugin installation"
+        gke-gcloud-auth-plugin --version || echo "gke-gcloud-auth-plugin not found!"
 
-    # Step 6: Get GKE credentials
+        # Verify that the plugin is installed by checking the path
+        echo "Checking the location of gke-gcloud-auth-plugin"
+        which gke-gcloud-auth-plugin
+
+    # Step 5: Get GKE credentials
     - name: Get GKE credentials
       run: |
         gcloud container clusters get-credentials simple-website-cluster --zone europe-west2-b --project ${{ secrets.GCP_PROJECT_ID }}
 
-    # Step 7: Set Kubernetes context
+    # Step 6: Set Kubernetes context
     - name: Set Kubernetes context
       run: |
         kubectl config use-context gke_${{ secrets.GCP_PROJECT_ID }}_${{ secrets.GCP_ZONE }}_${{ secrets.GKE_CLUSTER_NAME }}
 
-    # Step 8: Build Docker image
+    # Step 7: Build Docker image
     - name: Build Docker image
       run: |
         docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/simple-website:${{ github.sha }} .
 
-    # Step 9: Push Docker image to GCR
+    # Step 8: Push Docker image to GCR
     - name: Push Docker image to GCR
       run: |
         docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/simple-website:${{ github.sha }}
 
-    # Step 10: Deploy to GKE
+    # Step 9: Deploy to GKE
     - name: Deploy to GKE
       run: |
         kubectl set image deployment/simple-website-deployment simple-website-container=gcr.io/${{ secrets.GCP_PROJECT_ID }}/simple-website:${{ github.sha }}
