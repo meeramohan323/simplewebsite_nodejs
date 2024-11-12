@@ -47,16 +47,14 @@ jobs:
     # Step 7: Build Docker image
     - name: Build Docker image
       run: |
-        docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/simple-website:${{ github.sha }} .
+        docker build -t  gcr.io/stone-chariot-439615-n0/simple-website:1.0.
 
     # Step 8: Push Docker image to GCR
     - name: Push Docker image to GCR
       run: |
-        docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/simple-website:${{ github.sha }}
-
+        docker push  gcr.io/stone-chariot-439615-n0/simple-website:1.0
     # Step 9: Deploy to GKE
     - name: Deploy to GKE
       run: |
-           sed -i 's|gcr.io/${{ secrets.GCP_PROJECT_ID }}/simple-website:${{ github.sha }}|gcr.io/${{ secrets.GCP_PROJECT_ID }}/simple-website:${{ github.sha }}|g' k8s-deployment.yaml
-           kubectl apply -f k8s-deployment.yaml
+           
            kubectl apply -f k8s-service.yaml
