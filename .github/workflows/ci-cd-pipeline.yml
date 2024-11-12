@@ -20,37 +20,26 @@ jobs:
       with:
         credentials_json: ${{ secrets.GCP_SA_KEY }}  # Your GCP service account JSON key
 
-    # Step 3: Set up Google Cloud SDK
-    - name: Set up Google Cloud SDK
+    # Step 3: Set up Google Cloud SDK with gke-gcloud-auth-plugin
+    - name: Set up Google Cloud SDK with gke-gcloud-auth-plugin
       uses: google-github-actions/setup-gcloud@v1
       with:
         project_id: ${{ secrets.GCP_PROJECT_ID }}
         export_default_credentials: true
+        install_components: gke-gcloud-auth-plugin
 
-    # Step 4: Install and verify gke-gcloud-auth-plugin
-    - name: Install and verify gke-gcloud-auth-plugin
+    # Step 4: Verify gke-gcloud-auth-plugin
+    - name: Verify gke-gcloud-auth-plugin
       run: |
-        # Install Google Cloud SDK
-        curl -sSL https://sdk.cloud.google.com | bash
-        source $HOME/google-cloud-sdk/path.bash.inc
-        
-        # Install gke-gcloud-auth-plugin
-        gcloud components install gke-gcloud-auth-plugin --quiet
-
-        # Ensure the plugin is available
-        echo "Verifying gke-gcloud-auth-plugin installation"
+        echo "Checking gke-gcloud-auth-plugin version"
         gke-gcloud-auth-plugin --version || echo "gke-gcloud-auth-plugin not found!"
-
-        # Verify that the plugin is installed by checking the path
-        echo "Checking the location of gke-gcloud-auth-plugin"
-        which gke-gcloud-auth-plugin
 
     # Step 5: Get GKE credentials
     - name: Get GKE credentials
       run: |
         gcloud container clusters get-credentials simple-website-cluster --zone europe-west2-b --project ${{ secrets.GCP_PROJECT_ID }}
 
-    # Step 6: Set Kubernetes context
+    # Step 6: Set Kubernetes context (Optional)
     - name: Set Kubernetes context
       run: |
         kubectl config use-context gke_${{ secrets.GCP_PROJECT_ID }}_${{ secrets.GCP_ZONE }}_${{ secrets.GKE_CLUSTER_NAME }}
