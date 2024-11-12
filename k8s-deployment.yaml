@@ -14,6 +14,6 @@ spec:
     spec:
       containers:
       - name: simple-website
-        image: gcr.io/${{ secrets.GCP_PROJECT_ID }}/simple-website:${{ github.sha }}  # The image tag is dynamically updated during the deploy
+        image: gcr.io/${{ secrets.GCP_PROJECT_ID }}/simple-website:${{ github.sha }}
         ports:
         - containerPort: 3000
