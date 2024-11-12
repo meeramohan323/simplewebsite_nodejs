@@ -57,5 +57,5 @@ jobs:
     # Step 9: Deploy to GKE
     - name: Deploy to GKE
       run: |
-        kubectl apply k8s-deployment.yaml
+        kubectl apply -f k8s-deployment.yaml
         kubectl apply -f k8s-service.yaml
