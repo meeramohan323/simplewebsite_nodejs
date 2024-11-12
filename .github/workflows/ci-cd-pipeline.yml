@@ -57,5 +57,5 @@ jobs:
     # Step 9: Deploy to GKE
     - name: Deploy to GKE
       run: |
-        kubectl set image deployment/simple-website-deployment simple-website-container=gcr.io/${{ secrets.GCP_PROJECT_ID }}/simple-website:${{ github.sha }}
+        kubectl apply k8s-deployment.yaml
         kubectl apply -f k8s-service.yaml
