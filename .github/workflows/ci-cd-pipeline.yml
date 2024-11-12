@@ -57,5 +57,6 @@ jobs:
     # Step 9: Deploy to GKE
     - name: Deploy to GKE
       run: |
-        kubectl apply -f k8s-deployment.yaml
-        kubectl apply -f k8s-service.yaml
+           sed -i 's|gcr.io/${{ secrets.GCP_PROJECT_ID }}/simple-website:${{ github.sha }}|gcr.io/${{ secrets.GCP_PROJECT_ID }}/simple-website:${{ github.sha }}|g' k8s-deployment.yaml
+           kubectl apply -f k8s-deployment.yaml
+           kubectl apply -f k8s-service.yaml
