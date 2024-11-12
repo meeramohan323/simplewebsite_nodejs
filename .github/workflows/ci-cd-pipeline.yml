@@ -39,10 +39,7 @@ jobs:
       run: |
         gcloud container clusters get-credentials simple-website-cluster --zone europe-west2-b --project ${{ secrets.GCP_PROJECT_ID }}
 
-    # Step 6: Set Kubernetes context (Optional)
-    - name: Set Kubernetes context
-      run: |
-        kubectl config use-context gke_${{ secrets.GCP_PROJECT_ID }}_${{ secrets.GCP_ZONE }}_${{ secrets.GKE_CLUSTER_NAME }}
+    
 
     # Step 7: Build Docker image
     - name: Build Docker image
