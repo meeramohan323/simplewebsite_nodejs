@@ -14,6 +14,6 @@ spec:
     spec:
       containers:
       - name: simple-website
-        image: gcr.io/ ${{ secrets.GCP_PROJECT_ID }}/simple-website:1.0
+        image:Image: gcr.io/stone-chariot-439615-n0/simple-website:1.0
         ports:
         - containerPort: 3000
