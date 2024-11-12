@@ -39,7 +39,10 @@ jobs:
       run: |
         gcloud container clusters get-credentials simple-website-cluster --zone europe-west2-b --project ${{ secrets.GCP_PROJECT_ID }}
 
-    
+    - name: Configure Docker for GCR
+      run: |
+        gcloud auth configure-docker gcr.io --quiet
+      
 
     # Step 7: Build Docker image
     - name: Build Docker image
